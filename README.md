@@ -11,8 +11,9 @@ commodities. Runs entirely on your own machine.
 
 ![Horizon10 Screener](docs/screenshots/01-screener.png)
 
-📖 **[Read the full plain-English guide →](docs/index.html)** (also served at
-`localhost:8000/guide` when the app is running)
+📖 **[Read the full plain-English guide →](https://dhavalp5415.github.io/horizon10/)**
+— how it works, what every screen does, and the actual formulas, written for a
+non-technical reader. (Also served at `localhost:8000/guide` when the app is running.)
 
 | | |
 |---|---|
