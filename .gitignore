@@ -1,0 +1,21 @@
+# Python
+backend/venv/
+__pycache__/
+*.py[cod]
+
+# Downloaded market data & generated state (rebuild with build_universe.py + warm_full.py)
+backend/cache/
+backend/ledger/
+backend/data/
+backend/warm_full_state.json
+backend/unresolved_*.json
+
+# Node
+node_modules/
+frontend/dist/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

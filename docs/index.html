@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Horizon10 — How It Works</title>
+<style>
+  :root{
+    --page:#0d0d0d; --surface:#1a1a19; --raised:#232321;
+    --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --line:#383835;
+    --s1:#3987e5; --s2:#199e70; --s3:#c98500; --s4:#9085e9; --s5:#e66767;
+    --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
+    --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+    --maxw:960px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);
+       line-height:1.65;font-size:16px}
+  img{max-width:100%;height:auto;display:block}
+  a{color:var(--s1)}
+  code{background:var(--raised);padding:.15em .4em;border-radius:5px;
+       font-size:.88em;color:#e8e6df;border:1px solid rgba(255,255,255,.08)}
+  pre{background:var(--raised);border:1px solid rgba(255,255,255,.1);
+      border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem}
+  pre code{background:none;border:none;padding:0}
+
+  /* layout */
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  header.hero{padding:64px 0 40px;border-bottom:1px solid var(--grid);
+    background:radial-gradient(900px 380px at 12% -10%,rgba(57,135,229,.16),transparent 60%),
+               radial-gradient(700px 340px at 88% 0%,rgba(25,158,112,.12),transparent 60%)}
+  .logo{font-weight:800;font-size:1.6rem;letter-spacing:-.02em}
+  .logo span{color:var(--s1)}
+  h1{font-size:clamp(2rem,5vw,3rem);line-height:1.12;margin:.5em 0 .3em;letter-spacing:-.03em}
+  .lede{font-size:1.12rem;color:var(--ink2);max-width:56ch}
+  h2{font-size:1.6rem;margin:2.4em 0 .2em;letter-spacing:-.02em;scroll-margin-top:70px}
+  h3{font-size:1.12rem;margin:1.8em 0 .3em}
+  p{color:var(--ink2)}
+  p strong,li strong{color:var(--ink)}
+  section{padding-bottom:8px}
+  .sub{color:var(--muted);font-size:.92rem;margin-top:.1em}
+
+  /* sticky nav */
+  nav.top{position:sticky;top:0;z-index:20;background:rgba(13,13,13,.88);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--grid)}
+  nav.top .wrap{display:flex;gap:6px;overflow-x:auto;padding-top:10px;padding-bottom:10px}
+  nav.top a{color:var(--ink2);text-decoration:none;font-size:.85rem;font-weight:500;
+    padding:6px 11px;border-radius:8px;white-space:nowrap;border:1px solid transparent}
+  nav.top a:hover{color:var(--ink);background:var(--raised);border-color:rgba(255,255,255,.1)}
+
+  /* stat strip */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:28px 0 6px}
+  .stat{background:var(--surface);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:15px 16px}
+  .stat b{display:block;font-size:1.5rem;letter-spacing:-.02em}
+  .stat span{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+
+  /* cards */
+  .card{background:var(--surface);border:1px solid rgba(255,255,255,.1);
+        border-radius:16px;padding:20px 22px;margin:16px 0}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+
+  /* accordion — the "fast scan, expand for depth" pattern */
+  details{background:var(--surface);border:1px solid rgba(255,255,255,.1);
+    border-radius:14px;margin:10px 0;overflow:hidden}
+  details[open]{border-color:rgba(57,135,229,.4)}
+  summary{cursor:pointer;padding:15px 18px;font-weight:600;list-style:none;
+    display:flex;align-items:center;gap:11px;transition:background .15s}
+  summary:hover{background:var(--raised)}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"▸";margin-left:auto;color:var(--muted);transition:transform .2s}
+  details[open] summary::after{transform:rotate(90deg)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .body{padding:2px 18px 18px;border-top:1px solid var(--grid)}
+  .body p:first-child{margin-top:14px}
+
+  /* misc */
+  table{width:100%;border-collapse:collapse;font-size:.9rem;margin:12px 0}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--grid);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+  .tag{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:999px;
+    border:1px solid;margin-right:5px;white-space:nowrap}
+  .t-good{color:var(--good);border-color:rgba(12,163,12,.45);background:rgba(12,163,12,.1)}
+  .t-blue{color:var(--s1);border-color:rgba(57,135,229,.45);background:rgba(57,135,229,.1)}
+  .t-warn{color:var(--warn);border-color:rgba(250,178,25,.45);background:rgba(250,178,25,.1)}
+  .t-violet{color:var(--s4);border-color:rgba(144,133,233,.45);background:rgba(144,133,233,.1)}
+  figure{margin:18px 0}
+  figure img{border-radius:14px;border:1px solid rgba(255,255,255,.12)}
+  figcaption{color:var(--muted);font-size:.82rem;margin-top:8px;text-align:center}
+  .callout{border-left:3px solid var(--s3);background:rgba(201,133,0,.08);
+    border-radius:0 12px 12px 0;padding:14px 18px;margin:18px 0}
+  .callout.ok{border-color:var(--good);background:rgba(12,163,12,.08)}
+  .formula{background:var(--raised);border:1px solid rgba(255,255,255,.1);border-radius:10px;
+    padding:12px 16px;margin:12px 0;font-size:.95rem;color:var(--ink)}
+  ul{color:var(--ink2)} li{margin:.3em 0}
+  .step{display:flex;gap:14px;margin:14px 0}
+  .num{flex:0 0 30px;height:30px;border-radius:9px;background:var(--raised);
+    border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;
+    font-weight:700;font-size:.85rem;color:var(--s1)}
+  footer{border-top:1px solid var(--grid);margin-top:56px;padding:26px 0 60px;color:var(--muted);font-size:.86rem}
+  .pill-row{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+  @media (max-width:600px){ body{font-size:15px} .wrap{padding:0 16px} }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="logo">Horizon<span>10</span></div>
+    <h1>Every listed stock,<br>judged the way the greats would.</h1>
+    <p class="lede">
+      Horizon10 is a research dashboard that runs <strong>3,584 stocks</strong> — the entire
+      NSE main board plus the whole US S&amp;P 1500 — through the same scoring engine, then
+      asks eight legendary investing frameworks what they think of each one.
+      It runs entirely on your own computer.
+    </p>
+    <div class="stats">
+      <div class="stat"><b>3,584</b><span>Stocks covered</span></div>
+      <div class="stat"><b>2,062</b><span>India (all NSE)</span></div>
+      <div class="stat"><b>1,522</b><span>Global</span></div>
+      <div class="stat"><b>8</b><span>Investor lenses</span></div>
+      <div class="stat"><b>~15ms</b><span>Page data</span></div>
+    </div>
+    <p class="sub">A research tool — not financial advice. It shows its reasoning so you can disagree with it.</p>
+  </div>
+</header>
+
+<nav class="top"><div class="wrap">
+  <a href="#start">Start it</a>
+  <a href="#tour">The 9 screens</a>
+  <a href="#score">The score</a>
+  <a href="#legends">Investor lenses</a>
+  <a href="#unique">What's unique</a>
+  <a href="#build">How it was built</a>
+  <a href="#data">Data &amp; honesty</a>
+  <a href="#faq">FAQ</a>
+</div></nav>
+
+<div class="wrap">
+
+<!-- ===================== START ===================== -->
+<section id="start">
+  <h2>Running it on your computer</h2>
+  <p>Everything lives on your machine. No account, no subscription, no data leaves your laptop
+     except the requests that fetch stock prices.</p>
+
+  <div class="step"><div class="num">1</div><div>
+    <strong>Double-click <code>Start Horizon10.bat</code></strong>
+    <p class="sub">It opens your browser at <a href="http://localhost:8000">http://localhost:8000</a>. Keep the little black window open while you use the app — closing it stops the server.</p>
+  </div></div>
+  <div class="step"><div class="num">2</div><div>
+    <strong>That's it.</strong>
+    <p class="sub">One program serves both the website you look at and the data behind it, so there is nothing else to start.</p>
+  </div></div>
+
+  <h3>First-time setup (only once)</h3>
+<pre><code>cd backend
+python -m venv venv
+venv\Scripts\python.exe -m pip install -r requirements.txt
+venv\Scripts\python.exe build_universe.py   # collect every listed stock
+venv\Scripts\python.exe warm_full.py        # download the data (~75 min)
+
+cd ..\frontend
+npm install
+npm run build</code></pre>
+
+  <div class="callout">
+    <strong>Why "localhost"?</strong> <code>localhost:8000</code> just means "a website served by
+    my own computer, on door number 8000". Nobody else can open that link — it isn't on the internet.
+  </div>
+
+  <h3>Want it to start automatically?</h3>
+  <p>Press <code>Win + R</code>, type <code>shell:startup</code>, and drop a shortcut to
+     <code>Start Horizon10.bat</code> in the folder that opens.</p>
+</section>
+
+<!-- ===================== TOUR ===================== -->
+<section id="tour">
+  <h2>The nine screens</h2>
+  <p>Click any panel to open the deep dive. Skim the headlines first — expand only what you care about.</p>
+
+  <figure>
+    <img src="screenshots/01-screener.png" alt="Horizon10 stock screener showing scored Indian stocks">
+    <figcaption>The Screener — every stock scored 0–100, sortable and filterable</figcaption>
+  </figure>
+
+  <details open>
+    <summary><span class="dot" style="background:var(--s1)"></span>1. Screener — the front door</summary>
+    <div class="body">
+      <p>A ranked table of every stock. The six cards on top are the best-scoring opportunities
+         right now; the table below lets you sort by any column and filter by sector, PEG, growth or score.</p>
+      <p><strong>How to read a row:</strong> <code>PE</code> is how many years of current profit
+         you're paying for the share. <code>PEG</code> divides that by growth — under 1 usually means
+         growth isn't fully priced in yet. <code>Rev CAGR</code> is the average yearly sales growth.
+         <code>Fair Value</code> is what the old-school formulas say it's worth, and the coloured
+         percentage is how far today's price sits from that.</p>
+      <p><strong>The "Reliable data only" button</strong> is on by default. Tiny companies often publish
+         almost nothing, and scoring them on two numbers would be dishonest. Click it to show
+         the whole market anyway — nothing is hidden from you, it's just ranked separately.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s2)"></span>2. Industries — where to fish</summary>
+    <div class="body">
+      <p>Sectors ranked by the average score of the companies inside them. Good investors often say
+         picking the right industry does half the work — this screen is that shortlist, and it shows
+         the top three stocks inside each sector so you can jump straight in.</p>
+      <p>Only well-covered companies vote on a sector's score, so one obscure micro-cap can't drag
+         an entire industry up or down.</p>
+      <figure><img src="screenshots/02-industries.png" alt="Industry rankings"></figure>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s3)"></span>3. Legend Lens — what is it actually worth?</summary>
+    <div class="body">
+      <p>Two gauges at the top show the <strong>Buffett Indicator</strong> — the total value of a
+         stock market divided by the size of its economy. Buffett called 75–90% reasonable.
+         India sits around 121%; the US is near an all-time-high 237%.</p>
+      <p>Below, every stock is valued using the legends' own formulas, and labelled
+         <span class="tag t-good">Undervalued</span><span class="tag t-blue">Fairly Valued</span><span class="tag t-warn">Expensive</span>.</p>
+      <figure><img src="screenshots/03-legend-lens.png" alt="Legend Lens with Buffett Indicator gauges"></figure>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s4)"></span>4. Multibagger Radar — small companies that could get big</summary>
+    <div class="body">
+      <p>Ten-baggers almost always start small. This screen blends the rules of five investors famous
+         for finding them and lists, for each stock, exactly which rules it triggers — for example
+         <em>"Lynch fast grower: revenue +112%"</em> or <em>"Promoter holding 68%"</em>.</p>
+      <p>"Prime Multibagger Setup" needs a high score <strong>and</strong> a small or mid size.
+         A giant company can compound, but it rarely multiplies ten times.</p>
+      <figure><img src="screenshots/04-multibaggers.png" alt="Multibagger Radar"></figure>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s5)"></span>5. Round Table — where the legends argue</summary>
+    <div class="body">
+      <p>Every rating service squeezes a stock into one number. This one refuses to. Eight frameworks
+         vote independently, and the <strong>disagreement between them</strong> is shown as its own signal.</p>
+      <p>High agreement + cheap = a conviction idea. High disagreement = a "battleground" — Graham may
+         call it wildly overpriced while Buffett's checklist calls it a wonderful business.
+         That argument is exactly what will decide the outcome, so it's worth your homework.</p>
+      <figure><img src="screenshots/05-round-table.png" alt="Round Table battlegrounds"></figure>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s1)"></span>6. Stock page — the deep dive</summary>
+    <div class="body">
+      <p>Click any stock anywhere to get its full story on one page:</p>
+      <ul>
+        <li><strong>What is the price assuming?</strong> — the growth rate baked into today's price versus what the company actually delivers</li>
+        <li><strong>Price chart</strong> (1 year / 5 years / all time) and yearly revenue &amp; profit bars</li>
+        <li><strong>Score profile</strong> radar and every metric with plain-English tooltips</li>
+        <li><strong>What the legends say</strong> — Graham, Lynch, Buffett and Jhunjhunwala checklists, plus a fair-value range</li>
+        <li><strong>Decade Simulator</strong>, <strong>Fundamental twins</strong> and <strong>Return DNA</strong> (explained below)</li>
+      </ul>
+      <figure><img src="screenshots/06-stock-overview.png" alt="Stock page overview"></figure>
+      <figure><img src="screenshots/07-stock-legends.png" alt="Legend verdicts on a stock"></figure>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s2)"></span>7. Portfolio X-Ray — your actual money</summary>
+    <div class="body">
+      <p>Add what you own (quantity and buy price) and see it through every lens at once: live profit
+         and loss, your <strong>value-weighted</strong> quality score, how concentrated you are in one
+         sector, and a red flag on any holding that is very expensive or priced for perfection.</p>
+      <p>Holdings are saved in a plain file on your computer. Foreign holdings are converted at the
+         live dollar-rupee rate. There's a watchlist too — the ☆ on any stock page.</p>
+      <figure><img src="screenshots/10-portfolio.png" alt="Portfolio X-Ray"></figure>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s3)"></span>8. Pulse — what changed while you were away</summary>
+    <div class="body">
+      <p>Every refresh saves a dated snapshot of all 3,584 scores. Pulse compares snapshots and tells
+         you what moved <strong>and why</strong> — for example <em>"Amazon: Expensive → Fairly Valued
+         (PE 31.3 → 29.3)"</em>. It's a research desk's morning note, except computed rather than written.</p>
+      <figure><img src="screenshots/11-pulse.png" alt="Pulse change feed"></figure>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s4)"></span>9. Gold &amp; Silver — and Compare</summary>
+    <div class="body">
+      <p>Ten-year trends for gold and silver in both dollars and rupees, the classic
+         <strong>gold-to-silver ratio</strong> against its own average, and a momentum signal.
+         Gold earns nothing, but it cushions crashes and currency slides — the page says exactly that.</p>
+      <p><strong>Compare</strong> puts 2–4 stocks side by side, from either market, with performance
+         rebased to 100 so you compare like with like.</p>
+      <figure><img src="screenshots/09-commodities.png" alt="Gold and silver page"></figure>
+    </div>
+  </details>
+</section>
+
+<!-- ===================== SCORE ===================== -->
+<section id="score">
+  <h2>The 10-Year Score, in plain English</h2>
+  <p>Every stock gets one number from 0 to 100. It is the weighted average of four questions —
+     and each part is visible on the stock page, so you can see <em>why</em> a score is what it is.</p>
+
+  <table>
+    <tr><th>Question</th><th>Weight</th><th>What it looks at</th></tr>
+    <tr><td><strong>Is it fairly priced?</strong></td><td>30%</td><td>PE compared with its own sector, PEG, price-to-sales</td></tr>
+    <tr><td><strong>Is it growing?</strong></td><td>30%</td><td>Sales growth this year, 4-year sales growth rate, profit growth</td></tr>
+    <tr><td><strong>Is the growth steady?</strong></td><td>20%</td><td>How many years grew, and how bumpy the ride was</td></tr>
+    <tr><td><strong>Is it a good business?</strong></td><td>20%</td><td>Return on equity, profit margins, debt, cash generation</td></tr>
+  </table>
+
+  <div class="card">
+    <h3 style="margin-top:0">Two design decisions worth knowing</h3>
+    <p><strong>Compared to its own kind.</strong> A bank is judged against banks, not against software
+       companies. Valuation uses each sector's own median, so "expensive" always means expensive
+       <em>for that industry</em>.</p>
+    <p><strong>Missing data is never guessed.</strong> If a number isn't published, that part is skipped
+       and the rest re-weighted — and the stock carries a visible <em>completeness</em> percentage.
+       Anything under 60% is flagged "thin data".</p>
+  </div>
+</section>
+
+<!-- ===================== LEGENDS ===================== -->
+<section id="legends">
+  <h2>The investor lenses — and how they line up</h2>
+  <p>Some of these are real published formulas. Some are styles reconstructed from what the investor
+     said and did. The app labels which is which, because pretending a style is a formula would be dishonest.</p>
+
+  <table>
+    <tr><th>Lens</th><th>What it asks</th><th>Type</th></tr>
+    <tr><td><strong>Benjamin Graham</strong></td><td>What's the most a careful buyer should pay?</td><td><span class="tag t-good">real formula</span></td></tr>
+    <tr><td><strong>Peter Lynch</strong></td><td>Is the growth cheap relative to its speed?</td><td><span class="tag t-good">real rule</span></td></tr>
+    <tr><td><strong>Warren Buffett</strong></td><td>Is this a wonderful business at a fair price?</td><td><span class="tag t-blue">principles checklist</span></td></tr>
+    <tr><td><strong>Rakesh Jhunjhunwala</strong></td><td>Growth, quality, and does the promoter own a lot?</td><td><span class="tag t-warn">style checklist</span></td></tr>
+    <tr><td><strong>Jim Slater</strong></td><td>Small company, PEG under 0.75?</td><td><span class="tag t-good">real rule</span></td></tr>
+    <tr><td><strong>Raamdeo Agrawal</strong></td><td>Quality, Growth, Longevity, Price (QGLP)</td><td><span class="tag t-blue">principles</span></td></tr>
+    <tr><td><strong>William O'Neil</strong></td><td>Are profits accelerating and is it a market leader?</td><td><span class="tag t-blue">CANSLIM traits</span></td></tr>
+    <tr><td><strong>BlackRock</strong></td><td>How does it rank on Value, Quality, Momentum?</td><td><span class="tag t-violet">factor style</span></td></tr>
+  </table>
+
+  <details>
+    <summary><span class="dot" style="background:var(--good)"></span>The actual formulas (for the curious)</summary>
+    <div class="body">
+      <p><strong>Graham Number</strong> — his ceiling on a defensive buy:</p>
+      <div class="formula">Fair price = √( 22.5 × earnings per share × book value per share )</div>
+      <p><strong>Graham's growth formula</strong>:</p>
+      <div class="formula">Value = EPS × ( 8.5 + 2 × growth&nbsp;% )</div>
+      <p><strong>Peter Lynch</strong> — a fair PE equals the growth rate (so PEG = 1):</p>
+      <div class="formula">Fair price = EPS × growth&nbsp;% &nbsp;<span style="color:var(--muted)">(growth kept between 10 and 25)</span></div>
+      <p>The final <strong>fair value</strong> is the middle of whichever of these apply — and the app
+         shows the full range, so a wide spread warns you the models disagree.</p>
+      <div class="callout">
+        <strong>A guard against fantasy.</strong> One brilliant year can make growth look permanent.
+        Growth used in these formulas is capped at sales growth + 8 points, so a one-off profit spike
+        can't inflate a fair value. Affected stocks say so on screen.
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s4)"></span>How the Multibagger formula is blended</summary>
+    <div class="body">
+      <table>
+        <tr><th>Ingredient</th><th>Weight</th><th>Whose idea</th></tr>
+        <tr><td>Room to grow (small = better)</td><td>20%</td><td>Lynch — "big companies make small moves"</td></tr>
+        <tr><td>Growth engine</td><td>25%</td><td>Lynch fast-growers + Agrawal's QGLP</td></tr>
+        <tr><td>Growth at a reasonable price</td><td>20%</td><td>Slater's Zulu Principle (PEG &lt; 0.75)</td></tr>
+        <tr><td>Business quality &amp; balance sheet</td><td>20%</td><td>Agrawal's QGLP quality</td></tr>
+        <tr><td>Momentum &amp; conviction</td><td>15%</td><td>O'Neil's CANSLIM + Jhunjhunwala on promoters</td></tr>
+      </table>
+    </div>
+  </details>
+</section>
+
+<!-- ===================== UNIQUE ===================== -->
+<section id="unique">
+  <h2>Four things no other tool does</h2>
+  <p>Trendlyne, Tickertape, Screener.in, Simply Wall St, GuruFocus and Stockopedia all cover the basics.
+     These four are the parts I couldn't find anywhere else.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">① Expectations Gap</h3>
+      <p>Every research firm publishes <em>their</em> growth forecast. This flips the question:
+         <strong>what growth is already baked into today's price?</strong> Then it compares that with
+         what the company actually delivers.</p>
+      <p class="sub">Verdicts run from <em>Expectations Cushion</em> (delivering more than the price asks)
+         to <em>Extreme Hope</em> (priced for a miracle).</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">② Disagreement as a signal</h3>
+      <p>Ratings collapse everything into one number, hiding the argument. The Round Table keeps
+         the eight votes separate and measures the spread, surfacing
+         <strong>battleground stocks</strong> where the frameworks fight.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">③ Return DNA</h3>
+      <p>Was the last five years' gain earned by the <strong>business</strong>, or just by the market
+         agreeing to pay a higher multiple? One is durable; the other reverses.
+         Institutional technique, absent from retail tools.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">④ Fundamental Twins</h3>
+      <p>Finds companies with the same quality-and-growth fingerprint <strong>across sectors and
+         across countries</strong> — then flags the ones trading cheaper. Everyone else only shows
+         you same-sector peers.</p>
+    </div>
+  </div>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s3)"></span>Bonus: the Decade Simulator</summary>
+    <div class="body">
+      <p>Rather than hiding its assumptions inside a "fair value", this asks you to set them.
+         Drag two sliders — how fast profits grow, and what multiple the market pays in 2036 — and
+         it shows your yearly return and what ₹1,00,000 becomes.</p>
+      <p>Bear, Base and Bull presets are pre-filled from the stock's own record and from the growth
+         already priced in. The point isn't prediction; it's seeing <strong>which assumption your
+         money is actually betting on</strong>.</p>
+      <figure><img src="screenshots/08-stock-deepdive.png" alt="Decade simulator, twins and return DNA"></figure>
+    </div>
+  </details>
+</section>
+
+<!-- ===================== BUILD ===================== -->
+<section id="build">
+  <h2>How it was built</h2>
+  <p>Two pieces, one address. A Python program does the thinking; a React website does the showing;
+     the Python program also serves the website, so <code>localhost:8000</code> is all you ever need.</p>
+
+<pre><code>India Stock Market/
+├─ Start Horizon10.bat      ← double-click this
+├─ backend/                 ← Python: data + all the maths
+│   ├─ universe.py          full list of stocks (curated + auto)
+│   ├─ build_universe.py    collects every NSE + S&P 1500 listing
+│   ├─ warm_full.py         downloads the data, politely
+│   ├─ fetcher.py           talks to Yahoo Finance, caches to disk
+│   ├─ scoring.py           the 10-year score
+│   ├─ legends.py           Graham, Lynch, Buffett, Jhunjhunwala, factors
+│   ├─ multibagger.py       the blended multibagger formula
+│   ├─ expectations.py      what growth the price assumes
+│   ├─ roundtable.py        the eight votes + disagreement
+│   ├─ twins.py             fundamental look-alikes
+│   ├─ ledger.py            daily snapshots → the Pulse feed
+│   └─ main.py              the web server + API
+├─ frontend/                ← React: the screens you look at
+└─ docs/                    ← this page + screenshots</code></pre>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s1)"></span>Getting all 3,584 stocks — and the fight with Yahoo</summary>
+    <div class="body">
+      <p>The stock list comes from official sources: NSE's own listing file for India, and Wikipedia's
+         S&amp;P 500/400/600 constituent tables for the US. No hand-typing, so nothing is forgotten.</p>
+      <p>The data itself was the hard part. Three real problems and their fixes:</p>
+      <ul>
+        <li><strong>Yahoo banned us.</strong> Fetching with 12 parallel workers tripped a rate limit
+            that locked the IP for over half an hour. The fix was patience: one stock at a time with
+            an adaptive pause. The full download takes about 75 minutes and finished with
+            <strong>3,560 of 3,561 stocks</strong>.</li>
+        <li><strong>A silent trap.</strong> The Yahoo library doesn't raise an error when it's blocked —
+            it just returns an empty result. Naively, that looks identical to "this company has no data",
+            and would have permanently blacklisted thousands of perfectly good stocks. The fix: when
+            several stocks fail in a row, ask about a company that definitely has data (Reliance, Apple).
+            If that fails too, we're blocked — so wait and <strong>put those stocks back in the queue</strong>.</li>
+        <li><strong>Resumable by design.</strong> The download can be stopped and restarted at any time;
+            it skips what it already has and never loses a stock.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s2)"></span>Making 3,584 stocks feel instant</summary>
+    <div class="body">
+      <p>Going from 381 stocks to 3,584 broke things that were invisible at small scale:</p>
+      <ul>
+        <li><strong>A hidden O(n²).</strong> Ranking each stock against all others compared every value
+            with every other value. At 381 stocks nobody notices; at 3,584 it's twelve million
+            comparisons per feature. Switching to a sorted list with binary search made it instant.</li>
+        <li><strong>The encoder was the bottleneck</strong> — not the maths. Converting thousands of
+            scored rows to JSON cost more than computing them, so the finished result is now stored
+            as ready-to-send text and reused until the data changes.</li>
+        <li><strong>Result:</strong> pages fetch their data in <strong>12–21 milliseconds</strong>.
+            Tables show 150 rows with a "Show more" button, because painting 2,000 rows at once
+            makes any browser stutter.</li>
+      </ul>
+      <table>
+        <tr><th>Screen data</th><th>Size</th><th>Time</th></tr>
+        <tr><td>Screener (India, 2,062 stocks)</td><td>2.4 MB</td><td>16 ms</td></tr>
+        <tr><td>Round Table</td><td>1.8 MB</td><td>12 ms</td></tr>
+        <tr><td>Legend Lens</td><td>1.7 MB</td><td>21 ms</td></tr>
+        <tr><td>One stock's full page</td><td>35 KB</td><td>17 ms</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="dot" style="background:var(--s4)"></span>Refreshing the data later</summary>
+    <div class="body">
+      <p>The <strong>Refresh data</strong> button in the sidebar re-downloads everything. Across a whole
+         market that takes about an hour, so it runs in the background with a progress bar — and the app
+         stays fully usable the whole time, serving the last good data.</p>
+      <p>If Yahoo starts rate-limiting mid-refresh, the sidebar says so plainly and the app waits it out
+         rather than silently losing stocks.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ===================== DATA ===================== -->
+<section id="data">
+  <h2>Where the numbers come from — and what to distrust</h2>
+  <p>All figures come from Yahoo Finance and are stored on your computer. The app is deliberately
+     blunt about its own limits:</p>
+  <ul>
+    <li><strong>Big companies have good data; tiny ones often don't.</strong> Rather than hide the small
+        ones or pretend to score them, each stock shows a completeness percentage and screens default
+        to the well-covered ones.</li>
+    <li><strong>Value formulas are conservative by design.</strong> Graham and Lynch were written for a
+        different era — great growth companies will often read "Expensive" here while scoring highly
+        elsewhere in the app. That tension is the point, not a bug.</li>
+    <li><strong>Only about four years of annual accounts</strong> are available, so "consistency" and
+        "growth rate" are measured over that window.</li>
+    <li><strong>Nothing here predicts the future.</strong> The app ranks quality at a sensible price and
+        shows its working. Every number on screen can be traced to a formula in this document.</li>
+  </ul>
+  <div class="callout ok">
+    <strong>The honest summary:</strong> this is a thinking tool, not an oracle. Its real value is that
+    it never asks you to trust a number without showing you where the number came from.
+  </div>
+</section>
+
+<!-- ===================== FAQ ===================== -->
+<section id="faq">
+  <h2>Quick answers</h2>
+
+  <details>
+    <summary><span class="dot" style="background:var(--muted)"></span>Do I need to be online?</summary>
+    <div class="body"><p>Only to refresh prices. The app works offline from its saved data — it just
+      marks that data as stale in the sidebar.</p></div>
+  </details>
+  <details>
+    <summary><span class="dot" style="background:var(--muted)"></span>Is my portfolio private?</summary>
+    <div class="body"><p>Yes. Holdings are saved in a plain file inside the project folder
+      (<code>backend/data/portfolio.json</code>) and never sent anywhere.</p></div>
+  </details>
+  <details>
+    <summary><span class="dot" style="background:var(--muted)"></span>Why does a great company show as "Expensive"?</summary>
+    <div class="body"><p>Because the fair-value formulas are 1930s–1990s value tools. A wonderful business
+      can deserve a rich price — that's exactly why the Round Table shows all eight opinions instead
+      of one verdict.</p></div>
+  </details>
+  <details>
+    <summary><span class="dot" style="background:var(--muted)"></span>Can I add a stock that's missing?</summary>
+    <div class="body"><p>Add its ticker to <code>backend/universe.py</code> and press Refresh. But the
+      universe already includes every NSE main-board listing and the entire S&amp;P 1500, so misses
+      should be rare — usually a company Yahoo doesn't cover.</p></div>
+  </details>
+  <details>
+    <summary><span class="dot" style="background:var(--muted)"></span>Why 10 years?</summary>
+    <div class="body"><p>Because most of the frameworks here — Buffett's, Lynch's, Agrawal's — only work
+      over long holding periods. Over one year, price is a popularity contest; over ten, it tends to
+      follow the business.</p></div>
+  </details>
+</section>
+
+<footer>
+  <p><strong>Horizon10</strong> — a personal research dashboard. Data from Yahoo Finance.
+     Not investment advice; no guarantee of accuracy or outcomes. Do your own due diligence.</p>
+</footer>
+
+</div>
+</body>
+</html>
